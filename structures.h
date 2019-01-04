@@ -1,18 +1,13 @@
 //
 // Created by Ondřej Váně on 28/12/2018.
 //
+#include <ntsid.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include "global.h"
 
 #ifndef MYNTFS_STRUCTURES_H
 #define MYNTFS_STRUCTURES_H
-
-#include <ntsid.h>
-#include <stdbool.h>
-
-const int32_t UID_ITEM_FREE = 0;
-const int32_t MFT_FRAGMENTS_COUNT = 32;
-const int32_t CLUSTER_SIZE = 10;
-const int32_t CLUSTER_COUNT = 1024;
-const int32_t MFT_FRAGMENT_FREE = -1;
 
 struct boot_record {
     char signature[9];                                  //login autora FS
@@ -23,8 +18,9 @@ struct boot_record {
     int32_t mft_start_address;                          //adresa pocatku mft
     int32_t bitmap_start_address;                       //adresa pocatku bitmapy
     int32_t data_start_address;                         //adresa pocatku datovych bloku
-    int32_t mft_max_fragment_count;                     //maximalni pocet fragmentu v jednom zaznamu v mft (pozor, ne souboru)
-                                                        //stejne jako   MFT_FRAGMENTS_COUNT
+    int32_t mft_max_fragment_count;                     //maximalni pocet fragmentu v jednom zaznamu v mft (pozor, ne souboru)stejne jako   MFT_FRAGMENTS_COUNT
+    int32_t current_free_uid;
+    int32_t number_of_fragments;
 };
 
 struct mft_fragment {
@@ -40,7 +36,10 @@ struct mft_item {
     int8_t item_order_total;                            //celkovy pocet polozek v MFT
     char item_name[12];                                 //8+3 + /0 C/C++ ukoncovaci string znak
     int32_t item_size;                                  //velikost souboru v bytech
-    struct mft_fragment fragments[MFT_FRAGMENTS_COUNT]; //fragmenty souboru
+    int32_t parent_uid;                                 //odkaz na nadřazený adresář
+    struct mft_fragment fragments[32];                  //fragmenty souboru
 };
+
+
 
 #endif //MYNTFS_STRUCTURES_H
