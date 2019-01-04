@@ -212,6 +212,89 @@ void function_pwd(){
 
 }
 
+void function_ls(char *full_path){
+    int return_value;
+    struct mft_node *temp = current_dirrectory->child;
+
+    //vypsání obsahu aktuálního adresáře
+    if (full_path == NULL){
+        while (temp != NULL){
+            if(temp->mft_item->isDirectory == 1){
+                printf("+ %s\n", temp->mft_item->item_name);
+            } else{
+                printf("- FILE\n");
+            }
+            temp = temp->next;
+        }
+        return;
+    }
+
+    //relativní cesta
+    if(full_path[0] == '.'){
+        //odstranění tečky
+        full_path++;
+        return_value = check_path(full_path);
+        if(return_value != -1){
+            temp = get_node_with_uid(root_directory, return_value);
+            temp = temp->child;
+            while (temp != NULL){
+                if(temp->mft_item->isDirectory == 1){
+                    printf("+ %s\n", temp->mft_item->item_name);
+                } else{
+                    printf("- FILE\n");
+                }
+                temp = temp->next;
+            }
+        } else{
+            printf("PATH NOT FOUND\n");
+        }
+        return;
+    }
+
+    //absolutní cesta
+    if(full_path[0] == '/'){
+        return_value =check_path(full_path);
+        if (return_value != -1){
+            temp = get_node_with_uid(root_directory, return_value);
+            temp = temp->child;
+            while (temp != NULL){
+                if(temp->mft_item->isDirectory == 1){
+                    printf("+ %s\n", temp->mft_item->item_name);
+                } else{
+                    printf("- FILE\n");
+                }
+                temp = temp->next;
+            }
+        } else{
+            printf("PATH NOT FOUND\n");
+        }
+        return;
+    //podřazený adresář
+    } else{
+        while (temp != NULL){
+            if (strcmp(temp->mft_item->item_name, full_path) == 0){
+                temp = temp->child;
+                while (temp != NULL){
+                    if(temp->mft_item->isDirectory == 1){
+                        printf("+ %s\n", temp->mft_item->item_name);
+                    } else{
+                        printf("- FILE\n");
+                    }
+                    temp = temp->next;
+                }
+                return;
+            }
+            temp = temp->next;
+        }
+        printf("PATH NOT FOUND\n");
+
+    }
+
+
+
+
+}
+
 int get_free_cluster(){
     for (int i = 1; i<global_boot_record->cluster_count; i++){
         if(global_bit_map[i] == 0){
@@ -263,17 +346,13 @@ int check_path(char *path){
 
 
      while (temp != NULL){
-        printf("TEST1\n");
         while (temp_node != NULL){
-            printf("TEST2\n");
             if(strcmp(temp, temp_node->mft_item->item_name) == 0 && temp_node->mft_item->isDirectory == 1){
-                printf("TEST3\n");
                 current_uid = temp_node->mft_item->uid;
                 temp_node = temp_node->child;
                 temp = strtok(NULL, token);
                 break;
             } else{
-                printf("TEST4\n");
                 temp_node = temp_node->next;
                 if (temp_node == NULL){
                     return -1;

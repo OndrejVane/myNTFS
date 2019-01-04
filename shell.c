@@ -39,7 +39,7 @@ void shell(char *file_name){
         //rozdělení vstupu na příkaz
         command = strtok(buffer, token);
 
-        if(strcmp(command, "format") == 0){
+        if(strcmp(command, "format") == 0){             //naformátuje aktuálně načtený soubor
             param1 = strtok(NULL, token);
 
             if(param1[strlen(param1)-1] == 'B' && param1[strlen(param1)-2] == 'M'){
@@ -68,7 +68,13 @@ void shell(char *file_name){
 
         } else if(strcmp(command, "rmdir") == 0){       //smaže prázdný adresář
 
-            param1 ==
+            param1 = strtok(NULL, token);
+
+        } else if(strcmp(command, "ls") == 0){          //vypíše obsah adresáře
+
+            param1 = strtok(NULL, token);
+            function_ls(param1);
+
         }
         else if(strcmp(command, "info")==0){
             print_whole_tree(root_directory);

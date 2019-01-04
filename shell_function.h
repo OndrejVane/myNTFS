@@ -11,6 +11,7 @@ void function_cd(char *full_path);
 int get_free_cluster();
 int is_name_duplicit(char *name, int uid);
 int check_path(char *path);
+void function_ls(char *full_path);
 int check_relativ_path(char *path);
 
 #endif //MYNTFS_SHELL_FUNCTION_H
