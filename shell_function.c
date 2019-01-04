@@ -42,7 +42,6 @@ void function_mkdir(char *full_path){
             path = (char *) malloc(length);
             strncpy(path, full_path, length);
             path[length] = '\0';
-            printf("ABSOLUT PATH: %s\n", path);
             path_temp = check_path(path);
         }
     } else{
@@ -86,7 +85,7 @@ void function_mkdir(char *full_path){
     global_bit_map[free_cluster] = 1;
 
     // zapis fragmentu
-    mft_item->fragments[0].fragment_start_address = global_boot_record->data_start_address + (free_cluster* global_boot_record->cluster_size);
+    mft_item->fragments[0].fragment_start_address = global_boot_record->data_start_address + (free_cluster * global_boot_record->cluster_size);
     mft_item->fragments[0].fragment_count = 1; // pocet clusteru ve VFS od data start address
 
     for (int i = 1; i < MFT_FRAGMENTS_COUNT; i++){
@@ -287,12 +286,72 @@ void function_ls(char *full_path){
             temp = temp->next;
         }
         printf("PATH NOT FOUND\n");
+    }
+}
 
+void function_rmdir(char *full_path){
+    struct mft_node *temp = current_dirrectory->child;
+    int deleting_uid;
+    int return_value;
+
+    if (full_path == NULL){
+        printf("PATH NOT FOUND\n");
+        return;
     }
 
+    //absolutní cesta
+    if(full_path[0] == '/'){
+        deleting_uid =check_path(full_path);
+        if (deleting_uid != -1){
+            return_value = delete_node_with_uid(deleting_uid);
+            if (return_value == 1){
+                printf("OK\n");
+                return;
+            } else{
+                printf("NOT EMPTY\n");
+                return;
+            }
+        } else{
+            printf("PATH NOT FOUND\n");
+        }
+    }
 
-
-
+    //relativní cesta
+    if(full_path[0] == '.'){
+        //odstranění tečky
+        full_path++;
+        deleting_uid = check_path(full_path);
+        if (deleting_uid != -1){
+            return_value = delete_node_with_uid(deleting_uid);
+            if (return_value == 1){
+                printf("OK\n");
+                return;
+            } else{
+                printf("NOT EMPTY\n");
+                return;
+            }
+        } else{
+            printf("PATH NOT FOUND\n");
+        }
+        return;
+    //podřazený adresář
+    } else{
+        while (temp != NULL){
+            if (strcmp(temp->mft_item->item_name, full_path) == 0){
+                deleting_uid = temp->mft_item->uid;
+                return_value = delete_node_with_uid(deleting_uid);
+                if (return_value == 1){
+                    printf("OK\n");
+                    return;
+                } else{
+                    printf("NOT EMPTY\n");
+                    return;
+                }
+            }
+            temp = temp->next;
+        }
+        printf("PATH NOT FOUND\n");
+    }
 }
 
 int get_free_cluster(){
@@ -361,6 +420,16 @@ int check_path(char *path){
         }
      }
     return current_uid;
+}
+
+void bitmap_full(){
+    int count = 0;
+    for (int i = 0; i < global_boot_record->cluster_count ; ++i) {
+        if (global_bit_map[i] == 1){
+            count++;
+        }
+    }
+    printf("BITMAP FULL: %d\n", count);
 }
 
 int check_relativ_path(char *path){

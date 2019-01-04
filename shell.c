@@ -69,6 +69,7 @@ void shell(char *file_name){
         } else if(strcmp(command, "rmdir") == 0){       //smaže prázdný adresář
 
             param1 = strtok(NULL, token);
+            function_rmdir(param1);
 
         } else if(strcmp(command, "ls") == 0){          //vypíše obsah adresáře
 
@@ -78,6 +79,7 @@ void shell(char *file_name){
         }
         else if(strcmp(command, "info")==0){
             print_whole_tree(root_directory);
+            bitmap_full();
         }
         else if(strcmp(command, "help")==0){
             printf("exit:\tending the program\n");

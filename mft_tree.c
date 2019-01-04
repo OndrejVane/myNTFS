@@ -83,3 +83,44 @@ void print_whole_tree(struct mft_node *root){
         current1 = current2->child;
     }
 }
+/**
+ * Funkce, která smaže ze stromu záznam se zadaným UID.
+ * Smaže tento záznam jen tehdy, když neobsahuje žádné potomky.
+ * @param uid_delete
+ * @return -1 = obsahuje potomky, 1= úspěšně smazán
+ */
+int delete_node_with_uid(int uid_delete){
+    struct mft_node *deleting_note = get_node_with_uid(root_directory, uid_delete);
+    struct mft_node *deteting_parent = get_node_with_uid(root_directory, deleting_note->mft_item->parent_uid);
+    struct mft_node *temp = deteting_parent->child;
+    struct mft_node *previous_note = NULL;
+
+    //neobsahuje potomky => můžu smazat
+    if (deleting_note->child == NULL){
+        while (temp != NULL){
+            if(temp->mft_item->uid == uid_delete){
+                //mažu přímého potomka rodiče
+                if(previous_note == NULL){
+                    deteting_parent->child = temp->next;
+                    free(temp->mft_item);
+                    free(temp);
+                    global_boot_record->number_of_fragments--;
+                    return 1;
+                } else{
+                    previous_note->next = temp->next;
+                    free(temp->mft_item);
+                    free(temp);
+                    global_boot_record->number_of_fragments--;
+                    return 1;
+                }
+            }
+            previous_note = temp;
+            temp = temp->next;
+        }
+        global_boot_record->number_of_fragments--;
+        return 1;
+    } else{
+        //obsahuje potomky, nelze smazat
+        return -1;
+    }
+}
