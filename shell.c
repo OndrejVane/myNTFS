@@ -49,12 +49,12 @@ void shell(char *file_name){
                 printf("Wrong input!\n");
                 continue;
             }
-
             format_file(file_name, atoi(param1));
             read_file(file_name);
-        } else if(strcmp(command, "mkdir") == 0){       //vytvoří adresář
 
-            param1 = strtok(NULL, token);
+        } else if(strcmp(command, "mkdir") == 0){       //vytvoří adresář a1
+
+            param1 = strtok(NULL, token);               //a1
             function_mkdir(param1);
 
         } else if (strcmp(command, "pwd") == 0){        //vypíše aktuální cestu
@@ -73,14 +73,26 @@ void shell(char *file_name){
 
         } else if(strcmp(command, "ls") == 0){          //vypíše obsah adresáře
 
-            param1 = strtok(NULL, token);
+            param1 = strtok(NULL, token);               //cesta
             function_ls(param1);
 
         } else if(strcmp(command, "incp") == 0){        //nahraje soubor s1 z pevného disku do umístění s2 v pseudoMTFS
 
-            param1 = strtok(NULL, token);
-            param2 = strtok(NULL, token);
+            param1 = strtok(NULL, token);               //s1
+            param2 = strtok(NULL, token);               //s2
             function_incp(param1, param2);
+
+        } else if(strcmp(command, "outcp") == 0){       //nahraje soubor s1 z pseudoNTFS do umístění s2 na pevném disku
+
+            param1 = strtok(NULL, token);               //s1
+            param1 = strtok(NULL, token);               //s2
+            function_outcp(param1, param2);
+
+        } else if (strcmp(command, "rm") == 0){         //smaže soubor s1
+
+            param1 = strtok(NULL, token);               //s1
+            function_rm(param1);
+
         }
         else if(strcmp(command, "info")==0){
             print_whole_tree(root_directory);

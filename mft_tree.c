@@ -124,10 +124,61 @@ int delete_node_with_uid(int uid_delete){
             previous_note = temp;
             temp = temp->next;
         }
+        printf("SEM TO NIKDY NESMÍ DOJÍT!!\n");
         global_boot_record->number_of_fragments--;
         return 1;
     } else{
         //obsahuje potomky, nelze smazat
         return -1;
     }
+}
+
+int delete_node_with_uid_file(int uid_delete){
+   struct mft_node *deleting_node = get_node_with_uid(root_directory, uid_delete);
+   struct mft_node *deteting_parent = get_node_with_uid(root_directory, deleting_node->mft_item->parent_uid);
+   struct mft_node *temp = deteting_parent->child;
+   struct mft_node *previous_note = NULL;
+   int32_t number_of_clusters;
+   int bitmap_start = deleting_node->mft_item->fragments[0].bitmap_start_possition;
+
+   //pokud se nejdedná o soubor, tak nemůžu smazat
+   if(deleting_node->mft_item->isDirectory == 1){
+       return -1;
+   }
+
+    //zjištění potřebný počet clusterů
+    if (deleting_node->mft_item->item_size % CLUSTER_SIZE == 0){
+        number_of_clusters = (int32_t) deleting_node->mft_item->item_size/CLUSTER_SIZE;
+    } else{
+        number_of_clusters = (int32_t) (deleting_node->mft_item->item_size/CLUSTER_SIZE) + 1;
+    }
+
+    //smazaní všech clusterů, které odpovídají souboru z bitmapy
+    for (int i = bitmap_start; i < (bitmap_start + number_of_clusters); i++) {
+        global_bit_map[i] = 0;
+    }
+
+    while (temp != NULL){
+        if(temp->mft_item->uid == uid_delete){
+            //mažu přímého potomka rodiče
+            if(previous_note == NULL){
+                deteting_parent->child = temp->next;
+                free(temp->mft_item);
+                free(temp);
+                global_boot_record->number_of_fragments--;
+                return 1;
+            } else{
+                previous_note->next = temp->next;
+                free(temp->mft_item);
+                free(temp);
+                global_boot_record->number_of_fragments--;
+                return 1;
+            }
+        }
+        previous_note = temp;
+        temp = temp->next;
+    }
+
+    return -1;
+
 }

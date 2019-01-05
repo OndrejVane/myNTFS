@@ -198,10 +198,12 @@ void function_cd(char *full_path){
                 printf("OK\n");
                 return;
             } else{
+                /*
                 printf("PATH NOT FOUND\n");
                 return;
+                 */
+                mft_temp = mft_temp->next;
             }
-            mft_temp = mft_temp->next;
         }
         printf("PATH NOT FOUND\n");
     }
@@ -497,6 +499,87 @@ void function_incp(char *pc_path, char *ntfs_path){
     add_next_under_uid(root_directory, uid_parent, new_item);
 
     printf("OK\n");
+}
+
+void function_outcp(char *ntfs_path, char *pc_path){
+
+    //pc_path je prázdná
+    if(pc_path == NULL){
+        printf("FILE NOT FOUND\n");
+        return;
+    }
+
+    //cesta je prázdná
+    if (ntfs_path == NULL){
+        printf("PATH NOT FOUND\n");
+        return;
+    }
+
+}
+
+void function_rm(char *full_path){
+    char *file_name;
+    char *path;
+    int parent_uid;
+    struct mft_node *temp;
+    int length;
+
+    if(full_path == NULL){
+        printf("FILE NOT FOUND\n");
+        return;
+    }
+
+    //absolutní cesta
+    if(full_path[0] == '/'){
+        file_name = strrchr(full_path, '/');
+        file_name++;
+        length = (int) (strlen(full_path) - strlen(file_name));
+        path = (char *) malloc(length);
+        strncpy(path, full_path, length);
+        path[length] = '\0';
+        parent_uid = check_path(path);
+        return;
+    }
+
+    //relativní cesta
+    if(full_path[0] == '.'){
+        file_name = strrchr(full_path, '/');
+        full_path++;
+        file_name++;
+        length = (int) (strlen(full_path) - strlen(file_name));
+        path = (char *) malloc(length);
+        strncpy(path, full_path, length);
+        path[length] = '\0';
+        parent_uid = check_path(path);
+
+    } else{
+       parent_uid = pwd;
+       file_name = full_path;
+    }
+
+    if(parent_uid == -1){
+        printf("FILE NOT FOUND\n");
+        return;
+    }
+
+    temp = get_node_with_uid(root_directory, parent_uid);
+    temp = temp->child;
+
+    while (temp != NULL){
+        if(strcmp(temp->mft_item->item_name, file_name) == 0 && temp->mft_item->isDirectory == 0){
+
+            if(delete_node_with_uid_file(temp->mft_item->uid) == 1){
+                printf("OK\n");
+                return;
+            } else{
+                printf("FILE NOT FOUND\n");
+                return;
+            }
+        }
+        temp = temp->next;
+    }
+
+    printf("FILE NOT FOUND\n");
 }
 
 int get_free_cluster(){
