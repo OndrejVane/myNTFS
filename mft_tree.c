@@ -87,16 +87,23 @@ void print_whole_tree(struct mft_node *root){
  * Funkce, která smaže ze stromu záznam se zadaným UID.
  * Smaže tento záznam jen tehdy, když neobsahuje žádné potomky.
  * @param uid_delete
- * @return -1 = obsahuje potomky, 1= úspěšně smazán
+ * @return -1 = obsahuje potomky, 1= úspěšně smazán, -2 = není adresář
  */
 int delete_node_with_uid(int uid_delete){
     struct mft_node *deleting_note = get_node_with_uid(root_directory, uid_delete);
     struct mft_node *deteting_parent = get_node_with_uid(root_directory, deleting_note->mft_item->parent_uid);
     struct mft_node *temp = deteting_parent->child;
     struct mft_node *previous_note = NULL;
+    int bitmap_possition = deleting_note->mft_item->fragments[0].bitmap_start_possition;
+
+    //pokud se nejedná o složku ale o soubor, tak nemůžu smazat
+    if(deleting_note->mft_item->isDirectory == 0){
+        return -2;
+    }
 
     //neobsahuje potomky => můžu smazat
     if (deleting_note->child == NULL){
+        global_bit_map[bitmap_possition] = 0;
         while (temp != NULL){
             if(temp->mft_item->uid == uid_delete){
                 //mažu přímého potomka rodiče

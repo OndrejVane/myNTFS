@@ -26,6 +26,7 @@ struct boot_record {
 struct mft_fragment {
     int32_t fragment_start_address;                     //start adresa
     int32_t fragment_count;                             //pocet clusteru ve fragmentu
+    int32_t bitmap_start_possition;                     //první pozice v bitmapě
 };
 
 struct mft_item {

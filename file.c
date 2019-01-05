@@ -240,12 +240,13 @@ void format_file(char *file_name, int size){
         mft_root_item->item_order = 1;
         mft_root_item->item_order_total = 1;
         strcpy(mft_root_item->item_name, "ROOT");
-        mft_root_item->item_size = 1;
+        mft_root_item->item_size = 10;
         mft_root_item->parent_uid = -1;
 
         // zapis prvního fragmentu
         mft_root_item->fragments[0].fragment_start_address = boot_record->data_start_address;
         mft_root_item->fragments[0].fragment_count = 1; // pocet clusteru ve VFS od data start address
+        mft_root_item->fragments[0].bitmap_start_possition = 0;
 
 
         for (int i = 1; i < MFT_FRAGMENTS_COUNT; i++){

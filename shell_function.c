@@ -79,7 +79,7 @@ void function_mkdir(char *full_path){
     mft_item->item_order = 1;
     mft_item->item_order_total = 1;
     strcpy(mft_item->item_name, dir_name);
-    mft_item->item_size = 1;
+    mft_item->item_size = 10;
     mft_item->parent_uid = path_temp;
 
     global_bit_map[free_cluster] = 1;
@@ -87,6 +87,7 @@ void function_mkdir(char *full_path){
     // zapis fragmentu
     mft_item->fragments[0].fragment_start_address = global_boot_record->data_start_address + (free_cluster * global_boot_record->cluster_size);
     mft_item->fragments[0].fragment_count = 1; // pocet clusteru ve VFS od data start address
+    mft_item->fragments[0].bitmap_start_possition = free_cluster;
 
     for (int i = 1; i < MFT_FRAGMENTS_COUNT; i++){
         mft_item->fragments[i].fragment_start_address = MFT_FRAGMENT_FREE;
@@ -185,7 +186,7 @@ void function_cd(char *full_path){
     } else{
         mft_temp = current_dirrectory->child;
         while (mft_temp != NULL){
-            if(strcmp(mft_temp->mft_item->item_name, full_path) == 0){
+            if(strcmp(mft_temp->mft_item->item_name, full_path) == 0 && mft_temp->mft_item->isDirectory == 1){
                 if (pwd == 0){
                     strcat(pwd_path, full_path);
                 } else{
@@ -195,6 +196,9 @@ void function_cd(char *full_path){
                 pwd = mft_temp->mft_item->uid;
                 current_dirrectory = mft_temp;
                 printf("OK\n");
+                return;
+            } else{
+                printf("PATH NOT FOUND\n");
                 return;
             }
             mft_temp = mft_temp->next;
@@ -221,7 +225,7 @@ void function_ls(char *full_path){
             if(temp->mft_item->isDirectory == 1){
                 printf("+ %s\n", temp->mft_item->item_name);
             } else{
-                printf("- FILE\n");
+                printf("- %s\n", temp->mft_item->item_name);
             }
             temp = temp->next;
         }
@@ -240,7 +244,7 @@ void function_ls(char *full_path){
                 if(temp->mft_item->isDirectory == 1){
                     printf("+ %s\n", temp->mft_item->item_name);
                 } else{
-                    printf("- FILE\n");
+                    printf("- %s\n", temp->mft_item->item_name);
                 }
                 temp = temp->next;
             }
@@ -260,7 +264,7 @@ void function_ls(char *full_path){
                 if(temp->mft_item->isDirectory == 1){
                     printf("+ %s\n", temp->mft_item->item_name);
                 } else{
-                    printf("- FILE\n");
+                    printf("- %s\n", temp->mft_item->item_name);
                 }
                 temp = temp->next;
             }
@@ -277,7 +281,7 @@ void function_ls(char *full_path){
                     if(temp->mft_item->isDirectory == 1){
                         printf("+ %s\n", temp->mft_item->item_name);
                     } else{
-                        printf("- FILE\n");
+                        printf("- %s\n", temp->mft_item->item_name);
                     }
                     temp = temp->next;
                 }
@@ -307,7 +311,12 @@ void function_rmdir(char *full_path){
             if (return_value == 1){
                 printf("OK\n");
                 return;
-            } else{
+            }
+            else if(return_value == -2){
+                printf("NOT DIRECTORY\n");
+                return;
+            }
+            else{
                 printf("NOT EMPTY\n");
                 return;
             }
@@ -326,7 +335,10 @@ void function_rmdir(char *full_path){
             if (return_value == 1){
                 printf("OK\n");
                 return;
-            } else{
+            } else if(return_value == -2){
+                printf("NOT DIRECTORY\n");
+                return;
+            }else{
                 printf("NOT EMPTY\n");
                 return;
             }
@@ -343,7 +355,10 @@ void function_rmdir(char *full_path){
                 if (return_value == 1){
                     printf("OK\n");
                     return;
-                } else{
+                } else if(return_value == -2){
+                    printf("NOT DIRECTORY\n");
+                    return;
+                }else{
                     printf("NOT EMPTY\n");
                     return;
                 }
@@ -354,6 +369,138 @@ void function_rmdir(char *full_path){
     }
 }
 
+void function_incp(char *pc_path, char *ntfs_path){
+    FILE *input_file;
+    int32_t file_size;
+    int32_t first_free_cluster; //index prvního clusteru, kam se vejde celý soubor
+    int32_t number_of_clusters;
+    unsigned char buffer[700];
+    int uid_parent = -1;
+    struct mft_node *temp;
+    char *file_input_name;
+    struct mft_item *new_item;      //nový mft item, který bude vkládán do stromu
+
+    //pc_path je prázdná
+    if(pc_path == NULL){
+        printf("FILE NOT FOUND\n");
+        return;
+    }
+
+    //cesta je prázdná
+    if (ntfs_path == NULL){
+        printf("PATH NOT FOUND\n");
+        return;
+    }
+
+    //absolutní cesta v myNTFS
+    if (ntfs_path[0] == '/'){
+        uid_parent = check_path(ntfs_path);
+    }
+
+    if (ntfs_path[0] == '.'){
+        //odstranění tečky
+        ntfs_path++;
+        uid_parent = check_path(ntfs_path);
+
+    //podřazený adresář
+    } else{
+        temp = current_dirrectory->child;
+        while (temp != NULL){
+            if (strcmp(temp->mft_item->item_name, ntfs_path) == 0){
+                uid_parent = temp->mft_item->uid;
+                break;
+            }
+            temp = temp->next;
+        }
+    }
+
+    //zkontrolování, zda existuje cílová cesta
+    if(uid_parent == -1){
+        printf("PATH NOT FOUND\n");
+    }
+
+    //načtení a kontrola vstupního souboru z počítače
+    input_file = fopen(pc_path, "rb");
+    if(input_file == NULL) {
+        printf("FILE NOT FOUND\n");
+        return;
+    }
+
+    //zjištění názvu vstupního souboru
+    file_input_name = get_file_name(pc_path);
+
+    //zjištění, zda již neexistuje soubor se stejným názvem
+    if(is_name_duplicit(file_input_name, uid_parent) == -1){
+        printf("EXISTS\n");
+        return;
+    }
+
+    //zjištění velikosti souboru v bytech
+    fseek(input_file, 0L, SEEK_END);
+    file_size = (int32_t) ftell(input_file);
+    fseek(input_file, 0, SEEK_SET);
+
+    //zjištění potřebný počet clusterů
+    if (file_size % CLUSTER_SIZE == 0){
+        number_of_clusters = (int32_t) file_size/CLUSTER_SIZE;
+    } else{
+        number_of_clusters = (int32_t) (file_size/CLUSTER_SIZE) + 1;
+    }
+
+    //nalezení prvního volného clusteru, kam se vejde celý soubor
+    first_free_cluster = get_first_cluster(number_of_clusters);
+    if(first_free_cluster == -1){
+        printf("NEVEJDE SE SOUVISLE DO CLUSTERŮ\n");
+        return;
+    }
+
+    //tady už mám všechno zkontrolované a zjištěné
+    //můžu založit mft_item vložit ho do stromu a
+    //zapsat data do cluterů
+
+    //vytvoření nového mft záznamu
+    new_item = malloc(sizeof(struct mft_item));
+    new_item->uid = global_boot_record->current_free_uid;
+    global_boot_record->current_free_uid++;
+    global_boot_record->number_of_fragments++;
+    new_item->isDirectory = 0;
+    new_item->isSimbolicLink = 0;
+    strcpy(new_item->item_name, file_input_name);
+    new_item->parent_uid = uid_parent;
+    new_item->item_size = file_size;
+    new_item->item_order_total = 1;
+    new_item->item_order = 1;
+
+    //zapsání všech plných clusterů do bitmapy
+    for (int i = first_free_cluster; i < (first_free_cluster + number_of_clusters); i++) {
+        global_bit_map[i] = 1;
+    }
+    //zapsání prvního fragmentu
+    new_item->fragments[0].bitmap_start_possition = first_free_cluster;
+    new_item->fragments[0].fragment_start_address = global_boot_record->data_start_address + (CLUSTER_SIZE*first_free_cluster);
+    new_item->fragments[0].fragment_count = 1;
+
+    //TODO tady jsem skončil => budu pokračovat v načtení dat ze souboru a uložení dat do mojeho disku na příslušné clustery
+
+
+
+    //přidání záznamu do stromu
+    add_next_under_uid(root_directory, uid_parent, new_item);
+
+
+
+    /*
+    fread(buffer,sizeof(char),665,input_file); // read 10 bytes to our buffer
+
+    for(int i = 0; i<665; i++)
+        printf("%c ", buffer[i]); // prints a series of bytes
+
+    printf("\n Size: %d\n", file_size);
+    printf("Clusters size: %d\n", number_of_clusters);
+    printf("First free cluster %d\n", get_first_cluster((int)number_of_clusters));
+     */
+}
+
 int get_free_cluster(){
     for (int i = 1; i<global_boot_record->cluster_count; i++){
         if(global_bit_map[i] == 0){
@@ -361,6 +508,22 @@ int get_free_cluster(){
         }
     }
     return -1;
+}
+/**
+ * Funkce, která ze zadané cesty (absolutní i relativní) vrátí ukazatel
+ * na název souboru
+ * @param full_path zadaná cesta
+ * @return název souboru
+ */
+char *get_file_name(char *full_path){
+    char *return_value;
+    if(full_path[0] == '.' || full_path[0] == '/'){
+        return_value = strrchr(full_path, '/');
+        return_value++;
+    } else{
+        return_value = full_path;
+    }
+    return return_value;
 }
 
 /**
@@ -403,10 +566,10 @@ int check_path(char *path){
     //rozdělení na jednotlivé složky
      temp = strtok(path, token);
 
-
      while (temp != NULL){
         while (temp_node != NULL){
             if(strcmp(temp, temp_node->mft_item->item_name) == 0 && temp_node->mft_item->isDirectory == 1){
+                printf("Dir name: %s\n", temp_node->mft_item->item_name);
                 current_uid = temp_node->mft_item->uid;
                 temp_node = temp_node->child;
                 temp = strtok(NULL, token);
@@ -432,31 +595,39 @@ void bitmap_full(){
     printf("BITMAP FULL: %d\n", count);
 }
 
-int check_relativ_path(char *path){
-    char token[2] = "/";
-    char *temp;
-    int current_uid = 0;
-    struct mft_node *temp_node = current_dirrectory->child;
+/**
+ * Funkce, která nalezne v bitmapě tolik souvislých částí
+ * které jsou předány v parametru. Pokud nenalezne dostatečný
+ * počet clusterů za sebou vrací -1;
+ * @param cluster_need
+ * @return
+ */
+int get_first_cluster(int cluster_need){
+    int max = global_boot_record->cluster_count;
+    int free = 0;
+    int first;
 
 
-    //rozdělení na jednotlivé složky
-    temp = strtok(path, token);
+    for (int i = 0; i < max; ++i) {
+        if(global_bit_map[i] == 0){
 
-
-    while (temp != NULL){
-        while (temp_node != NULL){
-            if(strcmp(temp, temp_node->mft_item->item_name) == 0 && temp_node->mft_item->isDirectory == 1){
-                current_uid = temp_node->mft_item->uid;
-                temp_node = temp_node->child;
-                temp = strtok(NULL, token);
-                break;
-            } else{
-                temp_node = temp_node->next;
-                if (temp_node == NULL){
-                    return -1;
-                }
+            if(free == 0){
+                first = i;
             }
+            free++;
+            if(free == cluster_need){
+                return first;
+            }
+        } else{
+            free = 0;
+            first = 0;
         }
     }
-    return current_uid;
+    return -1;
+}
+
+void print_first_100_bitmap(){
+    for (int i = 0; i < 100; ++i) {
+        printf("BITMAP[%d] = %d\n", i, global_bit_map[i]);
+    }
 }

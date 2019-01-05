@@ -76,10 +76,16 @@ void shell(char *file_name){
             param1 = strtok(NULL, token);
             function_ls(param1);
 
+        } else if(strcmp(command, "incp") == 0){        //nahraje soubor s1 z pevného disku do umístění s2 v pseudoMTFS
+
+            param1 = strtok(NULL, token);
+            param2 = strtok(NULL, token);
+            function_incp(param1, param2);
         }
         else if(strcmp(command, "info")==0){
             print_whole_tree(root_directory);
             bitmap_full();
+            print_first_100_bitmap();
         }
         else if(strcmp(command, "help")==0){
             printf("exit:\tending the program\n");
