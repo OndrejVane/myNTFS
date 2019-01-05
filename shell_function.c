@@ -374,11 +374,13 @@ void function_incp(char *pc_path, char *ntfs_path){
     int32_t file_size;
     int32_t first_free_cluster; //index prvního clusteru, kam se vejde celý soubor
     int32_t number_of_clusters;
-    unsigned char buffer[700];
+    char buffer[CLUSTER_SIZE];
     int uid_parent = -1;
     struct mft_node *temp;
     char *file_input_name;
     struct mft_item *new_item;      //nový mft item, který bude vkládán do stromu
+
+    memset(buffer, 0, strlen(buffer));
 
     //pc_path je prázdná
     if(pc_path == NULL){
@@ -454,10 +456,6 @@ void function_incp(char *pc_path, char *ntfs_path){
         return;
     }
 
-    //tady už mám všechno zkontrolované a zjištěné
-    //můžu založit mft_item vložit ho do stromu a
-    //zapsat data do cluterů
-
     //vytvoření nového mft záznamu
     new_item = malloc(sizeof(struct mft_item));
     new_item->uid = global_boot_record->current_free_uid;
@@ -480,25 +478,25 @@ void function_incp(char *pc_path, char *ntfs_path){
     new_item->fragments[0].fragment_start_address = global_boot_record->data_start_address + (CLUSTER_SIZE*first_free_cluster);
     new_item->fragments[0].fragment_count = 1;
 
-    //TODO tady jsem skončil => budu pokračovat v načtení dat ze souboru a uložení dat do mojeho disku na příslušné clustery
+    for (int i = 1; i < MFT_FRAGMENTS_COUNT; i++){
+        new_item->fragments[i].fragment_start_address = MFT_FRAGMENT_FREE;
+        new_item->fragments[i].fragment_count = MFT_FRAGMENT_FREE;
+    }
 
+    //posun na záčátek data oblasti, kde budou zapisována data
+    fseek(global_file, new_item->fragments[0].fragment_start_address, SEEK_SET);
 
+    //načtení dat po CLUSTER SIZE, tedy po 10 bytech a zapsaání do myNTFS
+    for (int j = 0; j < number_of_clusters; ++j) {
+        fread(buffer,sizeof(char),10,input_file);
+        fwrite(buffer, sizeof(char), 10, global_file);
+        memset(buffer, 0, strlen(buffer));
+    }
 
     //přidání záznamu do stromu
     add_next_under_uid(root_directory, uid_parent, new_item);
 
-
-
-    /*
-    fread(buffer,sizeof(char),665,input_file); // read 10 bytes to our buffer
-
-    for(int i = 0; i<665; i++)
-        printf("%c ", buffer[i]); // prints a series of bytes
-
-    printf("\n Size: %d\n", file_size);
-    printf("Clusters size: %d\n", number_of_clusters);
-    printf("First free cluster %d\n", get_first_cluster((int)number_of_clusters));
-     */
+    printf("OK\n");
 }
 
 int get_free_cluster(){
