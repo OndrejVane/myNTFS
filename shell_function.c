@@ -424,7 +424,7 @@ void function_incp(char *pc_path, char *ntfs_path){
     }
 
     //načtení a kontrola vstupního souboru z počítače
-    input_file = fopen(pc_path, "rb");
+    input_file = fopen(pc_path, "r+b");
     if(input_file == NULL) {
         printf("FILE NOT FOUND\n");
         return;
@@ -444,6 +444,8 @@ void function_incp(char *pc_path, char *ntfs_path){
     file_size = (int32_t) ftell(input_file);
     fseek(input_file, 0, SEEK_SET);
 
+    printf("FILE SIZE: %d\n", file_size);
+
     //zjištění potřebný počet clusterů
     if (file_size % CLUSTER_SIZE == 0){
         number_of_clusters = (int32_t) file_size/CLUSTER_SIZE;
@@ -455,6 +457,7 @@ void function_incp(char *pc_path, char *ntfs_path){
     first_free_cluster = get_first_cluster(number_of_clusters);
     if(first_free_cluster == -1){
         printf("NEVEJDE SE SOUVISLE DO CLUSTERŮ\n");
+        printf("POUŽÍT ALGO FOR HOLES\n");
         return;
     }
 
@@ -495,6 +498,9 @@ void function_incp(char *pc_path, char *ntfs_path){
         memset(buffer, 0, strlen(buffer));
     }
 
+    //zavření vstupního souboru
+    fclose(input_file);
+
     //přidání záznamu do stromu
     add_next_under_uid(root_directory, uid_parent, new_item);
 
@@ -502,6 +508,12 @@ void function_incp(char *pc_path, char *ntfs_path){
 }
 
 void function_outcp(char *ntfs_path, char *pc_path){
+    int parent_uid;
+    int length;
+    struct mft_node *temp;
+    struct mft_node *output = NULL;
+    char *file_name, *path;
+    FILE *output_file;
 
     //pc_path je prázdná
     if(pc_path == NULL){
@@ -515,8 +527,159 @@ void function_outcp(char *ntfs_path, char *pc_path){
         return;
     }
 
+    //absolutní cesta
+    if(ntfs_path[0] == '/'){
+        file_name = strrchr(ntfs_path, '/');
+        file_name++;
+        length = (int) (strlen(ntfs_path) - strlen(file_name));
+        path = (char *) malloc(length);
+        strncpy(path, ntfs_path, length);
+        path[length] = '\0';
+        parent_uid = check_path(path);
+    }
+
+    //relativní cesta
+    if(ntfs_path[0] == '.'){
+        file_name = strrchr(ntfs_path, '/');
+        ntfs_path++;
+        file_name++;
+        length = (int) (strlen(ntfs_path) - strlen(file_name));
+        path = (char *) malloc(length);
+        strncpy(path, ntfs_path, length);
+        path[length] = '\0';
+        parent_uid = check_path(path);
+    //jen soubor
+    } else{
+        parent_uid = pwd;
+        file_name = ntfs_path;
+    }
+
+    //pokud není nalezená cesta, tak nemúže být ani soubor
+    if(parent_uid == -1){
+        printf("FILE NOT FOUND\n");
+        return;
+    }
+
+    temp = get_node_with_uid(root_directory, parent_uid);
+    temp = temp->child;
+
+    //prohledání celé složky, zda zdrojový soubor existuje
+    while(temp != NULL){
+        if(strcmp(temp->mft_item->item_name, file_name) == 0 && temp->mft_item->isDirectory == 0){
+            output = temp;
+            break;
+        }
+        temp = temp->next;
+    }
+
+    //zkontrolování jestli jsem něco našel, pokud ne, tak je kopírování neúspěšné
+    if(output == NULL){
+        printf("FILE NOT FOUND\n");
+        return;
+    }
+
+    //posun v disk na startovací pozici dat
+    fseek(global_file, output->mft_item->fragments[0].fragment_start_address, SEEK_SET);
+
+    char buffer[output->mft_item->item_size];
+    memset(buffer, 0, strlen(buffer));
+
+    fread(buffer, sizeof(char), (size_t)output->mft_item->item_size, global_file);
+
+    output_file = fopen(pc_path, "wb");
+    if (output_file != NULL){
+        for (int i = 0; i < output->mft_item->item_size; ++i) {
+            fputc(buffer[i], output_file);
+        }
+        printf("OK\n");
+        fclose(output_file);
+        return;
+    } else{
+        printf("PATH NOT FOUND\n");
+    }
 }
 
+void function_cat(char *full_path){
+    int parent_uid;
+    int length;
+    int number_of_clusters;
+    struct mft_node *temp;
+    struct mft_node *output = NULL;
+    char *file_name, *path;
+    FILE *output_file;
+
+    //cesta je prázdná
+    if (full_path == NULL){
+        printf("PATH NOT FOUND\n");
+        return;
+    }
+
+    //absolutní cesta
+    if(full_path[0] == '/'){
+        file_name = strrchr(full_path, '/');
+        file_name++;
+        length = (int) (strlen(full_path) - strlen(file_name));
+        path = (char *) malloc(length);
+        strncpy(path, full_path, length);
+        path[length] = '\0';
+        parent_uid = check_path(path);
+    }
+
+    //relativní cesta
+    if(full_path[0] == '.'){
+        file_name = strrchr(full_path, '/');
+        full_path++;
+        file_name++;
+        length = (int) (strlen(full_path) - strlen(file_name));
+        path = (char *) malloc(length);
+        strncpy(path, full_path, length);
+        path[length] = '\0';
+        parent_uid = check_path(path);
+        //jen soubor
+    } else{
+        parent_uid = pwd;
+        file_name = full_path;
+    }
+
+    //pokud není nalezená cesta, tak nemúže být ani soubor
+    if(parent_uid == -1){
+        printf("FILE NOT FOUND\n");
+        return;
+    }
+
+    temp = get_node_with_uid(root_directory, parent_uid);
+    temp = temp->child;
+
+    //prohledání celé složky, zda zdrojový soubor existuje
+    while(temp != NULL){
+        if(strcmp(temp->mft_item->item_name, file_name) == 0 && temp->mft_item->isDirectory == 0){
+            output = temp;
+            break;
+        }
+        temp = temp->next;
+    }
+
+    //zkontrolování jestli jsem něco našel, pokud ne, tak je vypsání neúspěšné
+    if(output == NULL){
+        printf("FILE NOT FOUND\n");
+        return;
+    }
+
+    //posun v disk na startovací pozici dat
+    fseek(global_file, output->mft_item->fragments[0].fragment_start_address, SEEK_SET);
+
+    char buffer[output->mft_item->item_size];
+    memset(buffer, 0, strlen(buffer));
+
+    fread(buffer, sizeof(char), (size_t)output->mft_item->item_size, global_file);
+
+    for (int i = 0; i < output->mft_item->item_size; ++i) {
+        printf("%c", buffer[i]);
+    }
+    printf("\n");
+}
+
+//TODO pokračovat v implementování funkce outcp
 void function_rm(char *full_path){
     char *file_name;
     char *path;
@@ -538,7 +701,6 @@ void function_rm(char *full_path){
         strncpy(path, full_path, length);
         path[length] = '\0';
         parent_uid = check_path(path);
-        return;
     }
 
     //relativní cesta

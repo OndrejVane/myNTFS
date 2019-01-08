@@ -85,7 +85,7 @@ void shell(char *file_name){
         } else if(strcmp(command, "outcp") == 0){       //nahraje soubor s1 z pseudoNTFS do umístění s2 na pevném disku
 
             param1 = strtok(NULL, token);               //s1
-            param1 = strtok(NULL, token);               //s2
+            param2 = strtok(NULL, token);               //s2
             function_outcp(param1, param2);
 
         } else if (strcmp(command, "rm") == 0){         //smaže soubor s1
@@ -93,6 +93,13 @@ void shell(char *file_name){
             param1 = strtok(NULL, token);               //s1
             function_rm(param1);
 
+        } else if(strcmp(command, "load") == 0){        //načte soubor z pevného disku, ve kterém budou jednotlivé příkazy
+                                                        // a začne je sekvenčně vykonávat. Formát je 1 příkaz/ 1 rádek
+            param1 = strtok(NULL, token);
+
+        } else if(strcmp(command, "cat") == 0){
+            param1 = strtok(NULL, token);
+            function_cat(param1);
         }
         else if(strcmp(command, "info")==0){
             print_whole_tree(root_directory);

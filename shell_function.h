@@ -16,6 +16,7 @@ void function_rmdir(char *full_path);
 void function_incp(char *pc_path, char *ntfs_path);
 void function_outcp(char *ntfs_path, char *pc_path);
 void function_rm(char *full_path);
+void function_cat(char *full_path);
 int get_first_cluster(int cluster_need);
 void bitmap_full();
 int check_relativ_path(char *path);
