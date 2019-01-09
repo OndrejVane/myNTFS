@@ -100,8 +100,11 @@ void shell(char *file_name){
         } else if(strcmp(command, "cat") == 0){
             param1 = strtok(NULL, token);
             function_cat(param1);
+        } else if(strcmp(command, "info") == 0){
+            param1 = strtok(NULL, token);
+            function_info(param1);
         }
-        else if(strcmp(command, "info")==0){
+        else if(strcmp(command, "mojeinfo")==0){
             print_whole_tree(root_directory);
             bitmap_full();
             print_first_100_bitmap();

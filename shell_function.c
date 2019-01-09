@@ -444,7 +444,7 @@ void function_incp(char *pc_path, char *ntfs_path){
     file_size = (int32_t) ftell(input_file);
     fseek(input_file, 0, SEEK_SET);
 
-    printf("FILE SIZE: %d\n", file_size);
+    //printf("FILE SIZE: %d\n", file_size);
 
     //zjištění potřebný počet clusterů
     if (file_size % CLUSTER_SIZE == 0){
@@ -473,6 +473,8 @@ void function_incp(char *pc_path, char *ntfs_path){
     new_item->item_size = file_size;
     new_item->item_order_total = 1;
     new_item->item_order = 1;
+
+
 
     //zapsání všech plných clusterů do bitmapy
     for (int i = first_free_cluster; i < (first_free_cluster + number_of_clusters); i++) {
@@ -560,6 +562,7 @@ void function_outcp(char *ntfs_path, char *pc_path){
         return;
     }
 
+
     temp = get_node_with_uid(root_directory, parent_uid);
     temp = temp->child;
 
@@ -572,6 +575,7 @@ void function_outcp(char *ntfs_path, char *pc_path){
         temp = temp->next;
     }
 
+
     //zkontrolování jestli jsem něco našel, pokud ne, tak je kopírování neúspěšné
     if(output == NULL){
         printf("FILE NOT FOUND\n");
@@ -581,9 +585,11 @@ void function_outcp(char *ntfs_path, char *pc_path){
     //posun v disk na startovací pozici dat
     fseek(global_file, output->mft_item->fragments[0].fragment_start_address, SEEK_SET);
 
-    char buffer[output->mft_item->item_size];
-    memset(buffer, 0, strlen(buffer));
+    //char buffer[output->mft_item->item_size];
+    char *buffer = malloc(sizeof(char)*output->mft_item->item_size);
+    memset(buffer, 0, output->mft_item->item_size);
 
+    //načtení dat z myNTFS do bufferu
     fread(buffer, sizeof(char), (size_t)output->mft_item->item_size, global_file);
 
     output_file = fopen(pc_path, "wb");
@@ -593,20 +599,19 @@ void function_outcp(char *ntfs_path, char *pc_path){
         }
         printf("OK\n");
         fclose(output_file);
-        return;
     } else{
         printf("PATH NOT FOUND\n");
     }
+    free(buffer);
+    buffer = NULL;
 }
 
 void function_cat(char *full_path){
     int parent_uid;
     int length;
-    int number_of_clusters;
     struct mft_node *temp;
     struct mft_node *output = NULL;
     char *file_name, *path;
-    FILE *output_file;
 
     //cesta je prázdná
     if (full_path == NULL){
@@ -679,7 +684,6 @@ void function_cat(char *full_path){
     printf("\n");
 }
 
-//TODO pokračovat v implementování funkce outcp
 void function_rm(char *full_path){
     char *file_name;
     char *path;
@@ -743,6 +747,104 @@ void function_rm(char *full_path){
 
     printf("FILE NOT FOUND\n");
 }
+
+void function_info(char *full_path){
+    char *file_name;
+    int length;
+    char *path;
+    int parent_uid;
+    struct mft_node *found_item = NULL;
+    struct mft_node *temp;
+    int number_of_clusters;
+    int fragments_count = 0;
+    //pokud je zadaná cesta prázdná, tak cesta neexistuje
+    if (full_path == NULL){
+        printf("FILE NOT FOUND\n");
+        return;
+    }
+
+    //absolutní cesta
+    if(full_path[0] == '/'){
+        file_name = strrchr(full_path, '/');
+        file_name++;
+        length = (int) (strlen(full_path) - strlen(file_name));
+        path = (char *) malloc(length);
+        strncpy(path, full_path, length);
+        path[length] = '\0';
+        parent_uid = check_path(path);
+    }
+
+    //relativní cesta
+    if(full_path[0] == '.'){
+        file_name = strrchr(full_path, '/');
+        full_path++;
+        file_name++;
+        length = (int) (strlen(full_path) - strlen(file_name));
+        path = (char *) malloc(length);
+        strncpy(path, full_path, length);
+        path[length] = '\0';
+        parent_uid = check_path(path);
+
+    } else{
+        parent_uid = pwd;
+        file_name = full_path;
+    }
+
+
+    if(parent_uid == -1){
+        printf("FILE NOT FOUND\n");
+        return;
+    }
+
+
+    temp = get_node_with_uid(root_directory, parent_uid);
+    temp = temp->child;
+
+    //prohledání složky
+    while (temp != NULL){
+        if(strcmp(temp->mft_item->item_name, file_name) == 0){
+            found_item = temp;
+            break;
+        }
+        temp = temp->next;
+
+    }
+
+    //kontrola, zda byl nalezen prvek
+    if (found_item == NULL){
+        printf("FILE NOT FOUND\n");
+        return;
+    }
+
+    //zjištění počtu fragmentů
+    for (int i = 0; i < MFT_FRAGMENTS_COUNT; ++i) {
+        if (found_item->mft_item->fragments[i].fragment_start_address != MFT_FRAGMENT_FREE){
+            fragments_count++;
+        }
+    }
+
+
+    //zjištění počtu clusterů
+    if (found_item->mft_item->item_size % CLUSTER_SIZE == 0){
+        number_of_clusters = (int32_t) found_item->mft_item->item_size/CLUSTER_SIZE;
+    } else{
+        number_of_clusters = (int32_t) (found_item->mft_item->item_size/CLUSTER_SIZE) + 1;
+    }
+
+    char *a = found_item->mft_item->item_name;
+    int32_t b = found_item->mft_item->uid;
+    int32_t c = found_item->mft_item->item_size;
+    int d = fragments_count;
+    int e = number_of_clusters;
+
+
+    if(found_item->mft_item->isDirectory == 1){
+        printf("NAME: %s  TYPE: directory  UID: %d  SIZE: %d B  FRAGMENTS: %d  CLUSTERS COUNT: %d\n", a, b, c, d, e);
+    } else{
+        printf("NAME: %s  TYPE: file  UID: %d  SIZE: %d B  FRAGMENTS: %d  CLUSTERS COUNT: %d\n", a, b, c, d, e);
+    }
+}
+
 
 int get_free_cluster(){
     for (int i = 1; i<global_boot_record->cluster_count; i++){

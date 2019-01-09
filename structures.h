@@ -41,6 +41,17 @@ struct mft_item {
     struct mft_fragment fragments[32];                  //fragmenty souboru
 };
 
+/**
+ * Pomocná struktura pro návratovou hodnotu
+ * path = cesta k souboru/složce
+ * name = název souboru/složky
+ */
+struct inf_box{
+    int32_t uid;
+    char *path;
+    char *name;
+};
+
 
 
 #endif //MYNTFS_STRUCTURES_H
