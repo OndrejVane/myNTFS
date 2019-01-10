@@ -7,6 +7,7 @@
 #define MYNTFS_GLOBAL_H
 
 extern FILE *global_file;
+extern char *global_file_name;
 extern int8_t *global_bit_map;
 extern struct boot_record *global_boot_record;
 extern int pwd;

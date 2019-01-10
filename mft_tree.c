@@ -18,15 +18,6 @@ struct mft_node *new_node(struct mft_item *mft_item)
     return new_node;
 }
 
-void add_child(struct mft_node * root, struct mft_item *mft_item)
-{
-    struct mft_node * current = root;
-    while (current->child != NULL) {
-        current = current->child;
-    }
-
-    current->child = new_node(mft_item);
-}
 
 struct mft_node *get_node_with_uid(struct mft_node *root, int uid)
 {
@@ -180,5 +171,48 @@ int delete_node_with_uid_file(int uid_delete){
     }
 
     return -1;
+
+}
+
+/**
+ * Přesune soubor s odpovídajícím uid do složky
+ * s uid, které je ve druhém parametru této funkce.
+ * @param file_uid      uid souboru k přesunutí
+ * @param dest_folder   uid složky kam se má přesnout
+ * @return  kontrolo -1 = nepovedlo se 1 = povedlo se
+ */
+int move_node_with_uid(int file_uid, int dest_folder){
+    struct mft_node *moving_node = get_node_with_uid(root_directory, file_uid);
+    struct mft_node *moving_parent = get_node_with_uid(root_directory, moving_node->mft_item->parent_uid);
+    struct mft_node *temp = moving_parent->child;
+    struct mft_node *previous_note = NULL;
+
+    //pokud se nejdedná o soubor, tak nemůžu přesouvat
+    if(moving_node->mft_item->isDirectory == 1){
+        return -1;
+    }
+
+    while (temp != NULL){
+        if(temp->mft_item->uid == file_uid){
+            //přesouvám přímého potomka rodiče
+            if(previous_note == NULL){
+                moving_parent->child = temp->next;
+                add_next_under_uid(root_directory, dest_folder, temp->mft_item);
+                temp->mft_item->parent_uid = dest_folder;
+                return 1;
+            } else{
+                //někde v listu
+                previous_note->next = temp->next;
+                add_next_under_uid(root_directory, dest_folder, temp->mft_item);
+                temp->mft_item->parent_uid = dest_folder;
+                return 1;
+            }
+        }
+        previous_note = temp;
+        temp = temp->next;
+    }
+
+    return -1;
+
 
 }

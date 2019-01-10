@@ -7,6 +7,7 @@
 
 
 FILE *global_file;
+char *global_file_name;
 int8_t *global_bit_map;
 struct boot_record *global_boot_record;
 int pwd;

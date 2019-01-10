@@ -15,10 +15,10 @@ main.o : main.c
 	$(CC) $(C99) -c main.c
 
 file.o : file.c
-	$(CC) $(C99) -c file.c
+	$(CC) $(C99) -c -w file.c
 
 shell.o : shell.c
-	$(CC) $(C99) -c shell.c
+	$(CC) $(C99) -c -w shell.c
 
 global.o : global.c
 	$(CC) $(C99) -c global.c

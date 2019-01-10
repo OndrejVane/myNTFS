@@ -32,7 +32,7 @@ struct mft_fragment {
 struct mft_item {
     int32_t uid;                                        //UID polozky, pokud UID = UID_ITEM_FREE, je polozka volna
     bool isDirectory;                                   //soubor, nebo adresar
-    bool isSimbolicLink;                                // symbolikcý link nebo ne
+    int32_t isSymbolicLink;                             //pokud je slink tak zde bude id na co ukazuji
     int8_t item_order;                                  //poradi v MFT pri vice souborech, jinak 1
     int8_t item_order_total;                            //celkovy pocet polozek v MFT
     char item_name[12];                                 //8+3 + /0 C/C++ ukoncovaci string znak
@@ -48,8 +48,8 @@ struct mft_item {
  */
 struct inf_box{
     int32_t uid;
-    char *path;
     char *name;
+    struct mft_node *mft_node;
 };
 
 

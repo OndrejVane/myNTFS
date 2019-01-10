@@ -236,7 +236,7 @@ void format_file(char *file_name, int size){
 
         mft_root_item->uid = 0;
         mft_root_item->isDirectory = true;
-        mft_root_item->isSimbolicLink = false;
+        mft_root_item->isSymbolicLink = false;
         mft_root_item->item_order = 1;
         mft_root_item->item_order_total = 1;
         strcpy(mft_root_item->item_name, "ROOT");

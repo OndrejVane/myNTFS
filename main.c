@@ -5,6 +5,8 @@
 #include "file.h"
 #include "shell.h"
 
+void print_label();
+
 /**
  * Vstupní funkce, která se spustí jako první. Zkontroluje
  * počet vstupních parametrů, načte(naformátuje) vstupní soubor
@@ -24,6 +26,10 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    print_label();
+
+    global_file_name = argv[1];
+
     //pokus o načtení souboru
     return_value = read_file(argv[1]);
 
@@ -39,4 +45,19 @@ int main(int argc, char *argv[]) {
     shell(argv[1]);
 
     return EXIT_SUCCESS;
+}
+
+void print_label(){
+    printf("\t                       __    __ ________ ________ ______  \n");
+    printf("\t                      /  \\  /  /        /        /      \\ \n");
+    printf("\t _____  ____  __    __$$  \\ $$ $$$$$$$$/$$$$$$$$/$$$$$$  |\n");
+    printf("\t/     \\/    \\/  |  /  $$$  \\$$ |  $$ |  $$ |__  $$ \\__$$/ \n");
+    printf("\t$$$$$$ $$$$  $$ |  $$ $$$$  $$ |  $$ |  $$    | $$      \\ \n");
+    printf("\t$$ | $$ | $$ $$ |  $$ $$ $$ $$ |  $$ |  $$$$$/   $$$$$$  |\n");
+    printf("\t$$ | $$ | $$ $$ \\__$$ $$ |$$$$ |  $$ |  $$ |    /  \\__$$ |\n");
+    printf("\t$$ | $$ | $$ $$    $$ $$ | $$$ |  $$ |  $$ |    $$    $$/ \n");
+    printf("\t$$/  $$/  $$/ $$$$$$$ $$/   $$/   $$/   $$/      $$$$$$/  \n");
+    printf("\t             /  \\__$$ |                                   \n");
+    printf("\t             $$    $$/                                    \n");
+    printf("\t              $$$$$$/                                     \n");
 }
