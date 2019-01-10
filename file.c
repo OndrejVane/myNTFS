@@ -11,6 +11,12 @@
 #include "global.h"
 #include "mft_tree.h"
 
+/**
+ * Funkce, která se pokusí načíst soubor, který představuje
+ * "disk". V tomto souboru by měla být odpovídající struktura.
+ * @param file_name     cesta k souboru na pc
+ * @return      1 = úspěšně načte -1 = soubor nenalezen
+ */
 int read_file(char *file_name){
 
     FILE *file;
@@ -81,6 +87,10 @@ int read_file(char *file_name){
 
 }
 
+/**
+ * Funkce, která při ukončovaání programu zapíše aktuální bitmapu do souboru.
+ * Stará bitmapa se přepíše.
+ */
 void write_bitmap(){
 
     if(global_file != NULL){
@@ -96,6 +106,9 @@ void write_bitmap(){
     }
 }
 
+/**
+ * Funkce, která zapíše aktualizovaný boot record do souboru
+ */
 void write_boot_record(){
 
     //posun na začátek souboru
@@ -127,6 +140,10 @@ void print_global_boot_record(){
     printf("-----------------------------------\n");
 }
 
+/**
+ * Funkce, která z načtených dat vytvoří strom složek a souborů.
+ * @param number_of_fragments počet frugmentů v ntfs
+ */
 void create_mft_tree(int number_of_fragments){
 
     struct mft_item *temp;
@@ -144,6 +161,11 @@ void create_mft_tree(int number_of_fragments){
     }
 }
 
+/**
+ * Funkce. která zapíše strom s všemy fragmenty na disk (do souboru).
+ *
+ * @param root  ukazatel na kořenový prvek
+ */
 void write_mft_tree_to_file(struct mft_node *root){
     struct mft_node *current1 = root;
     struct mft_node *current2;
@@ -173,6 +195,11 @@ void write_tree_to_file(struct mft_node *pNode) {
 }
 
 
+/**
+ * Funkce, která naformátuje nový soubor(disk).
+ * @param file_name název souboru (disku)
+ * @param size  velikost disku v MB
+ */
 void format_file(char *file_name, int size){
     FILE *file;
     struct boot_record *boot_record;

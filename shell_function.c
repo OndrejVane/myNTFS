@@ -931,6 +931,11 @@ void function_info(char *full_path){
     }
 }
 
+/**
+ * Funkce, která načte soubor s příkazy a začne
+ * je sekvenčně vykonávat. Jedne příkaz = jeden řádek.
+ * @param full_path cesta k souboru na pc
+ */
 void function_load(char *full_path){
     FILE *input_file;
     char * line = NULL;
@@ -1184,7 +1189,6 @@ void function_cp(char *target_path, char *destination_path) {
     //absolutní cesta
     if(destination_path[0] == '/'){
         destination_parent_uid = check_path(destination_path);
-        printf("DEST UID: %d\n", destination_parent_uid);
         //relativní cesta
     }else if(destination_path[0] == '.'){
         destination_path++;
@@ -1379,6 +1383,11 @@ void function_mv(char *target_path, char *destination_path){
 }
 
 
+/**
+ * Funkce, lterá vytvoří symblický linka na soubor.
+ * @param target_path   cesta ke zdrojovému souboru
+ * @param destination_path      cesta k uložení slinku a název
+ */
 void function_slink(char *target_path, char *destination_path){
 
     char *target_file_name, *slink_file_name;
@@ -1602,7 +1611,7 @@ int is_name_duplicit(char *name, int uid){
 }
 
 /**
- * Funkce, která zkontroluje zda je zadaná cesta validní
+ * Funkce, která zkontroluje zda je zadaná absolutní cesta
  * pokud ano vrátí UID rodiče.
  * Kontroluje pouze absolutní cestu
  * @return UID rodiče nebo -1 cesta nenalezena
@@ -1634,6 +1643,12 @@ int check_path(char *path){
     return current_uid;
 }
 
+/**
+ * Funkce, která zkontroluje zda je zadaná relativní cesta
+ * pokud ano vrátí UID rodiče.
+ * Kontroluje pouze absolutní cestu
+ * @return UID rodiče nebo -1 cesta nenalezena
+ */
 int check_relativ_path(char *path){
     char token[2] = "/";
     char *temp;
