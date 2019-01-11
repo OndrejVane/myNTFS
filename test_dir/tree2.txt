@@ -1,0 +1,27 @@
+#
+#                           root
+#          ___________________|___________________________________________
+#          |      |       |      |       |       |                       |
+#         bin    boot    users  dev    etc      home                    tree
+#          |              |                  ____|____                   |
+#      slink.txt   _______|______           |         |               tree2.txt
+#                  |      |      |        text      videos
+#                 ja    user1   user2       |          |
+#                  |      |      |      test.txt     pic.png
+#              ____|___   |      |
+#             |        |  |      |
+#           file  desktop |      |
+#            |            |      |
+#        pic.png      ____|___   |
+#                    |        |  |
+#                  file  desktop |
+#                           /    |
+#                          /     |
+#               test.txt__/  ____|___
+#                           |        |
+#                         file  desktop
+#                           |
+#                           |
+#                       test.txt
+#
+#

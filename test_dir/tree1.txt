@@ -1,0 +1,22 @@
+#
+#                           root
+#          ___________________|______________________________________________
+#          |      |       |      |       |       |                           |
+#         bin    boot    users  dev    etc      home                        tree
+#                         |                  ____|____                       |
+#                  _______|______           |         |                   tree1.txt
+#                  |      |      |        text      videos
+#                 ja    user1   user2       |          |
+#                  |      |      |      test1.txt     pic.png
+#              ____|___   |      |
+#             |        |  |      |
+#           file  desktop |      |
+#            |            |      |
+#        pic.png      ____|___   |
+#                    |        |  |
+#                  file  desktop |
+#                                |
+#                                |
+#                            ____|___
+#                           |        |
+#                         file  desktop

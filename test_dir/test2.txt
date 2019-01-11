@@ -1,0 +1,55 @@
+format 500MB
+mkdir bin
+mkdir tree
+mkdir boot
+mkdir users
+mkdir dev
+mkdir etc
+mkdir home
+mkdir /users/ja
+mkdir /users/user1
+mkdir /users/user2
+mkdir /users/ja/file
+mkdir /users/ja/desktop
+mkdir /users/user1/file
+mkdir /users/user1/desktop
+mkdir /users/user2/file
+mkdir /users/user2/desktop
+mkdir /home/text
+mkdir /home/videos
+incp ./test_dir/pic.png /users/ja/file
+incp ./test_dir/test.txt /home/text
+incp ./test_dir/pic.png /home/videos
+incp ./test_dir/tree2.txt /tree
+cp /home/text/test.txt /users/user2/file
+cp /home/text/test.txt /users/user1/file
+mv /users/user1/file/test.txt /users/user1/desktop
+slink /home/text/test.txt /bin/slink.txt
+cat /tree/tree2.txt
+
+#                           root
+#          ___________________|___________________________________________
+#          |      |       |      |       |       |                       |
+#         bin    boot    users  dev    etc      home                    tree
+#          |              |                  ____|____                   |
+#      slink.txt   _______|______           |         |               tree2.txt
+#                  |      |      |        text      videos
+#                 ja    user1   user2       |          |
+#                  |      |      |      test.txt     pic.png
+#              ____|___   |      |
+#             |        |  |      |
+#           file  desktop |      |
+#            |            |      |
+#        pic.png      ____|___   |
+#                    |        |  |
+#                  file  desktop |
+#                           /    |
+#                          /     |
+#               test.txt__/  ____|___
+#                           |        |
+#                         file  desktop
+#                           |
+#                           |
+#                       test.txt
+#
+#

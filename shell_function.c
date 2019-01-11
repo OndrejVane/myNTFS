@@ -179,14 +179,14 @@ void function_cd(char *full_path){
             printf("PATH NOT FOUND\n");
         }
         return;
-    }
-
-    //jdu podle absolutní cesty
-    if(full_path[0] == '/'){
+        //jdu podle absolutní cesty
+    } else if(full_path[0] == '/'){
+        return_value = check_path(full_path);
         if(return_value != -1){
             pwd = return_value;
             strcpy(pwd_path, temp);
             current_dirrectory = get_node_with_uid(root_directory, pwd);
+            //printf("name: %s\n", current_dirrectory->mft_item->item_name);
             printf("OK\n");
         } else{
             printf("PATH NOT FOUND\n");
@@ -251,10 +251,8 @@ void function_ls(char *full_path){
             temp = temp->next;
         }
         return;
-    }
-
-    //relativní cesta
-    if(full_path[0] == '.'){
+        //relativní cesta
+    }else if(full_path[0] == '.'){
         //odstranění tečky
         full_path++;
         return_value = check_relativ_path(full_path);
@@ -277,10 +275,8 @@ void function_ls(char *full_path){
             printf("PATH NOT FOUND\n");
         }
         return;
-    }
-
-    //absolutní cesta
-    if(full_path[0] == '/'){
+        //absolutní cesta
+    } else if(full_path[0] == '/'){
         return_value =check_path(full_path);
         if (return_value != -1){
             temp = get_node_with_uid(root_directory, return_value);
@@ -1355,7 +1351,6 @@ void function_mv(char *target_path, char *destination_path){
     //absolutní cesta
     if(destination_path[0] == '/'){
         destination_parent_uid = check_path(destination_path);
-        printf("DEST UID: %d\n", destination_parent_uid);
         //relativní cesta
     }else if(destination_path[0] == '.'){
         destination_path++;
@@ -1379,7 +1374,7 @@ void function_mv(char *target_path, char *destination_path){
 
     //funkce přesune uzel ze stromu a vloží na jíné místo
     move_node_with_uid(target_file->mft_item->uid, destination_parent_uid);
-    printf("OK");
+    printf("OK\n");
 }
 
 
@@ -1497,7 +1492,6 @@ void function_slink(char *target_path, char *destination_path){
         return;
     }
 
-    printf("TEST\n");
     //kontorla, zda již soubor se stejným názvem neexistuje
     if (is_name_duplicit(slink_file_name, slink_parent_uid) == -1){
         printf("EXISTS\n");
@@ -1543,7 +1537,94 @@ void function_slink(char *target_path, char *destination_path){
     printf("OK\n");
 }
 void function_test(char *full_path){
-    printf("TEST: %s\n", full_path);
+    int parent_uid;
+    int length;
+    struct mft_node *temp;
+    struct mft_node *output = NULL;
+    char *file_name, *path;
+    int number_of_clusters;
+
+    //cesta je prázdná
+    if (full_path == NULL){
+        printf("PATH NOT FOUND\n");
+        return;
+    }
+
+    //absolutní cesta
+    if(full_path[0] == '/'){
+        file_name = strrchr(full_path, '/');
+        file_name++;
+        length = (int) (strlen(full_path) - strlen(file_name));
+        path = (char *) malloc(length);
+        strncpy(path, full_path, length);
+        path[length] = '\0';
+        parent_uid = check_path(path);
+        //relativní cesta
+    }else if(full_path[0] == '.'){
+        file_name = strrchr(full_path, '/');
+        full_path++;
+        file_name++;
+        length = (int) (strlen(full_path) - strlen(file_name));
+        path = (char *) malloc(length);
+        strncpy(path, full_path, length);
+        path[length] = '\0';
+        parent_uid = check_relativ_path(path);
+        //jen soubor
+    } else{
+        parent_uid = pwd;
+        file_name = full_path;
+    }
+
+    //pokud není nalezená cesta, tak nemúže být ani soubor
+    if(parent_uid == -1){
+        printf("FILE NOT FOUND\n");
+        return;
+    }
+
+    temp = get_node_with_uid(root_directory, parent_uid);
+    temp = temp->child;
+
+    //prohledání celé složky, zda zdrojový soubor existuje
+    while(temp != NULL){
+        if(strcmp(temp->mft_item->item_name, file_name) == 0 && temp->mft_item->isDirectory == 0){
+            output = temp;
+            break;
+        }
+        temp = temp->next;
+    }
+
+    //zkontrolování jestli jsem něco našel, pokud ne, tak je vypsání neúspěšné
+    if(output == NULL){
+        printf("FILE NOT FOUND\n");
+        return;
+    }
+
+    //kontrola, zda se nejedná o symbolic link
+    if(output->mft_item->isSymbolicLink != 0){
+        output = get_node_with_uid(root_directory, output->mft_item->isSymbolicLink);
+        if(output == NULL){
+            printf("SYMBOLIC LINK IS BROKEN\n");
+            return;
+        }
+    }
+
+    number_of_clusters = get_number_of_clusters(output->mft_item->item_size);
+
+    //posun v disk na startovací pozici dat
+    fseek(global_file, output->mft_item->fragments[0].fragment_start_address, SEEK_SET);
+
+    char buffer[11];
+    for (int j = 0; j < number_of_clusters; ++j) {
+        memset(buffer, 0, strlen(buffer));
+
+        fread(buffer, sizeof(char), 10, global_file);
+
+        for (int i = 0; i < strlen(buffer); ++i) {
+            printf("%c", buffer[i]);
+        }
+    }
+
+    printf("\n");
 }
 
 int32_t get_number_of_clusters(int file_size){
