@@ -9,4 +9,4 @@ or
 gcc *.c -o myNTFS
 ```
 ## Documentation
-You can download documentation [HERE](https://www.google.com)
+You can download documentation [HERE](https://drive.google.com/open?id=1J4R3rXd15B4WG0AGjppgNZufjqzX25IJ)
