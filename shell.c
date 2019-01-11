@@ -162,7 +162,7 @@ void shell(char *file_name){
             system("clear");
 
         }
-        else if(strcmp(command, "test") == 0){            //moje testovací funkce
+        else if(strcmp(command, "test") == 0){            //moje testovací funkces
 
             param1 = strtok(NULL, token);
             function_test(param1);
